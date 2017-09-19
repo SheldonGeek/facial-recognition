@@ -1,14 +1,14 @@
 # This is a _very simple_ example of a web service that recognizes faces in uploaded images.
-# Upload an image file and it will check if the image contains a picture of Barack Obama.
+# Upload an image file and it will check if the image contains a picture of Lei.
 # The result is returned as json. For example:
 #
-# $ curl -F "file=@obama2.jpg" http://127.0.0.1:5001
+# $ curl -F "file=@Lei.jpg" http://127.0.0.1:5001
 #
 # Returns:
 #
 # {
 #  "face_found_in_image": true,
-#  "is_picture_of_obama": true
+#  "is_picture_of_Lei": true
 # }
 #
 # This example is based on the Flask file upload example: http://flask.pocoo.org/docs/0.12/patterns/fileuploads/
@@ -17,6 +17,7 @@
 # $ pip3 install flask
 
 import face_recognition
+import os
 from flask import Flask, jsonify, request, redirect
 
 # You can change this to any folder on your system
@@ -49,8 +50,8 @@ def upload_image():
     # If no valid image file was uploaded, show the file upload form:
     return '''
     <!doctype html>
-    <title>Is this a picture of Obama?</title>
-    <h1>Upload a picture and see if it's a picture of Obama!</h1>
+    <title>Is this a picture of Lei?</title>
+    <h1>Upload a picture and see if it's a picture of Lei!</h1>
     <form method="POST" enctype="multipart/form-data">
       <input type="file" name="file">
       <input type="submit" value="Upload">
@@ -59,55 +60,75 @@ def upload_image():
 
 
 def detect_faces_in_image(file_stream):
-    # Pre-calculated face encoding of Obama generated with face_recognition.face_encodings(img)
-    known_face_encoding = [-0.09634063,  0.12095481, -0.00436332, -0.07643753,  0.0080383,
-                            0.01902981, -0.07184699, -0.09383309,  0.18518871, -0.09588896,
-                            0.23951106,  0.0986533 , -0.22114635, -0.1363683 ,  0.04405268,
-                            0.11574756, -0.19899382, -0.09597053, -0.11969153, -0.12277931,
-                            0.03416885, -0.00267565,  0.09203379,  0.04713435, -0.12731361,
-                           -0.35371891, -0.0503444 , -0.17841317, -0.00310897, -0.09844551,
-                           -0.06910533, -0.00503746, -0.18466514, -0.09851682,  0.02903969,
-                           -0.02174894,  0.02261871,  0.0032102 ,  0.20312519,  0.02999607,
-                           -0.11646006,  0.09432904,  0.02774341,  0.22102901,  0.26725179,
-                            0.06896867, -0.00490024, -0.09441824,  0.11115381, -0.22592428,
-                            0.06230862,  0.16559327,  0.06232892,  0.03458837,  0.09459756,
-                           -0.18777156,  0.00654241,  0.08582542, -0.13578284,  0.0150229 ,
-                            0.00670836, -0.08195844, -0.04346499,  0.03347827,  0.20310158,
-                            0.09987706, -0.12370517, -0.06683611,  0.12704916, -0.02160804,
-                            0.00984683,  0.00766284, -0.18980607, -0.19641446, -0.22800779,
-                            0.09010898,  0.39178532,  0.18818057, -0.20875394,  0.03097027,
-                           -0.21300618,  0.02532415,  0.07938635,  0.01000703, -0.07719778,
-                           -0.12651891, -0.04318593,  0.06219772,  0.09163868,  0.05039065,
-                           -0.04922386,  0.21839413, -0.02394437,  0.06173781,  0.0292527 ,
-                            0.06160797, -0.15553983, -0.02440624, -0.17509389, -0.0630486 ,
-                            0.01428208, -0.03637431,  0.03971229,  0.13983178, -0.23006812,
-                            0.04999552,  0.0108454 , -0.03970895,  0.02501768,  0.08157793,
-                           -0.03224047, -0.04502571,  0.0556995 , -0.24374914,  0.25514284,
-                            0.24795187,  0.04060191,  0.17597422,  0.07966681,  0.01920104,
-                           -0.01194376, -0.02300822, -0.17204897, -0.0596558 ,  0.05307484,
-                            0.07417042,  0.07126575,  0.00209804]
+    # Pre-calculated face encoding of Lei generated with face_recognition.face_encodings(img)
+    known_face_encoding = [ -7.11279139e-02,   1.22983426e-01,   9.43208709e-02,
+        -9.80862603e-02,  -5.62107340e-02,  -1.13418177e-01,
+        -3.41067091e-02,  -1.03000261e-01,   1.80417880e-01,
+        -1.28590673e-01,   2.60902017e-01,  -5.28102778e-02,
+        -2.31831089e-01,  -1.20943777e-01,  -1.18304119e-02,
+         2.12682739e-01,  -2.63827473e-01,  -1.31882846e-01,
+        -3.79452892e-02,   6.36274517e-02,   1.16968818e-01,
+        -5.68333082e-03,   6.53189123e-02,   9.24607515e-02,
+        -1.10706650e-01,  -3.65827292e-01,  -1.09532066e-01,
+        -4.89493124e-02,  -3.25149447e-02,  -5.63860461e-02,
+        -4.14457135e-02,   1.66441184e-02,  -1.86966389e-01,
+        -8.32565427e-02,   4.55041341e-02,   4.77054641e-02,
+        -5.37577504e-03,  -9.99786258e-02,   1.88284889e-01,
+        -4.34060432e-02,  -3.17130208e-01,  -9.24870092e-03,
+         1.07365608e-01,   2.20936790e-01,   1.92348659e-01,
+        -3.57511826e-03,  -7.89884571e-03,  -1.37902081e-01,
+         1.47062644e-01,  -1.69987291e-01,   2.68517509e-02,
+         1.37726620e-01,   7.92049393e-02,   3.47217992e-02,
+         5.64628132e-02,  -1.26240745e-01,   4.28142771e-02,
+         1.97092205e-01,  -1.52313545e-01,  -4.75524627e-02,
+         9.80981588e-02,  -1.13969058e-01,   1.41255334e-02,
+        -7.71122053e-02,   1.80308685e-01,   4.20256369e-02,
+        -1.55654013e-01,  -1.65867761e-01,   9.80149508e-02,
+        -1.35042816e-01,  -3.52980942e-02,   7.89564252e-02,
+        -1.40327811e-01,  -1.67225391e-01,  -3.22533518e-01,
+        -6.69084489e-02,   3.26776028e-01,   7.79186338e-02,
+        -1.95328668e-01,   3.09872329e-02,  -6.37697130e-02,
+        -3.18884850e-04,   8.46827924e-02,   2.22686246e-01,
+        -3.60342301e-03,   7.39280358e-02,  -1.24281608e-01,
+         3.39172035e-03,   1.52438313e-01,  -3.70022580e-02,
+         4.53025289e-02,   2.79059619e-01,   3.86235863e-03,
+         5.15902229e-02,   2.50814687e-02,   1.53597444e-04,
+        -1.30407274e-01,   2.60672532e-02,  -1.58413738e-01,
+         2.08218973e-02,  -2.57265642e-02,  -1.23384539e-02,
+        -4.91752885e-02,   1.27612531e-01,  -1.66174620e-01,
+         6.71795756e-02,   1.86525863e-02,   3.15388553e-02,
+         1.70767847e-02,  -1.96357295e-02,  -2.57047955e-02,
+        -1.43892497e-01,   4.57158387e-02,  -2.13898152e-01,
+         1.08701408e-01,   1.60893574e-01,   3.47987339e-02,
+         1.04937002e-01,   6.40898123e-02,   8.40381980e-02,
+        -3.67956609e-02,  -5.64739220e-02,  -2.06414968e-01,
+         4.14526872e-02,   1.06759161e-01,  -6.46827072e-02,
+         1.07223623e-01,  -5.93802482e-02]
 
+    lei_image = face_recognition.load_image_file("Lei.jpg")
+    print(face_recognition.face_encodings(lei_image)[0])
     # Load the uploaded image file
     img = face_recognition.load_image_file(file_stream)
     # Get face encodings for any faces in the uploaded image
     unknown_face_encodings = face_recognition.face_encodings(img)
 
     face_found = False
-    is_obama = False
+    is_Lei = False
 
     if len(unknown_face_encodings) > 0:
         face_found = True
-        # See if the first face in the uploaded image matches the known face of Obama
+        # See if the first face in the uploaded image matches the known face of Lei
         match_results = face_recognition.compare_faces([known_face_encoding], unknown_face_encodings[0])
         if match_results[0]:
-            is_obama = True
+            is_Lei = True
 
     # Return the result as json
     result = {
         "face_found_in_image": face_found,
-        "is_picture_of_obama": is_obama
+        "is_picture_of_Lei": is_Lei
     }
     return jsonify(result)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host='0.0.0.0', port=port, debug=True)
